@@ -40,5 +40,6 @@ with tab1:
                                             "Date": date
                                             })
 
+with tab2:
+    st.table(st.session_state.sessions)
 
-        
