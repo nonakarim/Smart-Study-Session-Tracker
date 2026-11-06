@@ -70,5 +70,51 @@ with tab3:
         with col4:
             st.metric(label= "Average session duration", value= average_duration)
 
+with tab4:
+    if len(st.session_state.sessions) == 0:
+            st.info("Add a study session to generate the chart.")
+    else:
+        #Bar Chart
+        raw_df = pd.DataFrame(st.session_state.sessions)
+        
+        subject_chart_df = raw_df.groupby("Subject")["Duration"].sum().reset_index()
+        
+        st.bar_chart(
+            data=subject_chart_df,
+            x="Subject",
+            y="Duration",
+            color="#FF4B4B" 
+        )
 
+        #Pie Chart
+        subjects = ["Python", "C++", "Math", "English", "Science"]
+        durations = [0, 0, 0, 0, 0]
+
+        for i in st.session_state.sessions:
+            match i.get("Subject"):
+                case "Python":
+                    durations[0] += i.get("Duration")
+                case "C++":
+                    durations[1] += i.get("Duration")
+                case "Math":
+                    durations[2] += i.get("Duration")
+                case "English":
+                    durations[3] += i.get("Duration")
+                case "Science":
+                    durations[4] += i.get("Duration")                   
+                
+        fig, ax = plt.subplots()
+        ax.pie(durations, labels=subjects, autopct="%1.1f%%", startangle=90)
+        ax.axis("equal")
+
+        st.pyplot(fig)
+
+        #Message
+
+        if total_duration < 120:
+            st.info("Keep going!")
+        elif total_duration <= 300:
+            st.info("Good progress!")
+        else:
+            st.info("Study champion!")
         
