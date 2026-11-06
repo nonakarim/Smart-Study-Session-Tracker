@@ -43,3 +43,32 @@ with tab1:
 with tab2:
     st.table(st.session_state.sessions)
 
+with tab3:
+    if len(st.session_state.sessions) == 0:
+        st.info("Add a study session to generate the info.")
+    else:
+        total_duration= 0
+        max_duration= 0
+        max_duration_subj= ""
+        duration_sum= 0
+        for duration in st.session_state.sessions:
+            total_duration += duration.get("Duration")
+
+            if duration.get("Duration") > max_duration:
+                max_duration= duration.get("Duration")
+                max_duration_subj= duration.get("Subject")
+
+        average_duration= total_duration / len(st.session_state.sessions)
+
+        col1, col2, col3, col4= st.columns(4)
+        with col1:
+            st.metric(label= "Total study hours", value= total_duration)
+        with col2:
+            st.metric(label= "Number of sessions", value= len(st.session_state.sessions))
+        with col3:
+            st.metric(label= "Most studied subject", value= max_duration_subj)
+        with col4:
+            st.metric(label= "Average session duration", value= average_duration)
+
+
+        
