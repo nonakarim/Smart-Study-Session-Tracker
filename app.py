@@ -10,8 +10,9 @@ st.divider()
 
 tab1, tab2, tab3, tab4 = st.tabs(["Add a study session", "Session history", "Dashboard", "Productivity analysis"])
 
+subjects = ["Python", "C++", "Math", "English", "Science", "Social Studies", "Arabic"]
+
 with tab1:
-    subjects = ["Python", "C++", "Math", "English", "Science", "Social Studies", "Arabic"]
     with st.form(" "):
         stu_name = st.text_input("Student Name")
         subject = st.selectbox("Subject", subjects)
@@ -31,26 +32,30 @@ with tab1:
                 "Notes": notes
             })
 
+# Pre-calculate data alignment across tabs if sessions exist
+if len(st.session_state.sessions) > 0:
+    raw_df = pd.DataFrame(st.session_state.sessions)
+    # Ensure all subjects are represented in the data distribution, filling missing ones with 0
+    duration_series = raw_df.groupby("Subject")["Duration"].sum().reindex(subjects, fill_value=0)
+    durations = duration_series.tolist()
+    
+    total_duration = raw_df["Duration"].sum()
+    average_duration = raw_df["Duration"].mean()
+    total_hours = total_duration / 60
+    
+    max_duration_subj = duration_series.idxmax() if total_duration > 0 else ""
+
 with tab3:
     if len(st.session_state.sessions) == 0:
         st.info("Add a study session to generate the info.")
     else:
-        total_duration = 0
-        max_duration = 0
-        max_duration_subj = ""
-        duration_sum = 0
-        
-        for session in st.session_state.sessions:
-            total_duration += session.get("Duration")
-            
-        average_duration = total_duration / len(st.session_state.sessions)
-        total_hours = total_duration / 60
-        
         col1, col2, col3, col4 = st.columns(4)
         with col1:
             st.metric(label="Total study hours", value=f"{total_hours:.2f}")
         with col2:
             st.metric(label="Number of sessions", value=len(st.session_state.sessions))
+        with col3:
+            st.metric(label="Most studied subject", value=max_duration_subj)
         with col4:
             st.metric(label="Average session duration", value=f"{average_duration:.1f}m")
 
@@ -59,24 +64,10 @@ with tab4:
         st.info("Add a study session to generate the chart.")
     else:
         # Bar Chart
-        raw_df = pd.DataFrame(st.session_state.sessions)
         subject_chart_df = raw_df.groupby("Subject")["Duration"].sum().reset_index()
         st.bar_chart(data=subject_chart_df, x="Subject", y="Duration", color="#FF4B4B")
         
         # Pie Chart
-        subjects = ["Python", "C++", "Math", "English", "Science", "Social Studies", "Arabic"]
-        durations = [0] * len(subjects)
-        
-        for i in st.session_state.sessions:
-            match i.get("Subject"):
-                case "Python": durations[0] += i.get("Duration")
-                case "C++": durations[1] += i.get("Duration")
-                case "Math": durations[2] += i.get("Duration")
-                case "English": durations[3] += i.get("Duration")
-                case "Science": durations[4] += i.get("Duration")
-                case "Social Studies": durations[5] += i.get("Duration")
-                case "Arabic": durations[6] += i.get("Duration")
-                
         fig, ax = plt.subplots()
         ax.pie(durations, labels=subjects, autopct="%1.1f%%", startangle=90)
         ax.axis("equal")
@@ -90,23 +81,14 @@ with tab4:
         else:
             st.info("Study champion!")
 
-with tab3:
-    if len(st.session_state.sessions) != 0:
-        for duration, subject in zip(durations, subjects):
-            if duration > max_duration:
-                max_duration = duration
-                max_duration_subj = subject
-        with col3:
-            st.metric(label="Most studied subject", value=max_duration_subj)
-
 with tab2:
     category = st.selectbox("Choose History table category", ["All Subjects"] + subjects)
-    history = []
     
-    if category == "All Subjects":
-        st.table(st.session_state.sessions)
+    if len(st.session_state.sessions) == 0:
+        st.info("No history recorded yet.")
     else:
-        for i in st.session_state.sessions:
-            if i.get("Subject") == category:
-                history.append(i)
-        st.table(history)
+        if category == "All Subjects":
+            st.table(st.session_state.sessions)
+        else:
+            filtered_df = raw_df[raw_df["Subject"] == category]
+            st.table(filtered_df.to_dict(orient="records"))
