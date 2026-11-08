@@ -37,11 +37,9 @@ with tab1:
                                             "Subject": subject, 
                                             "Duration": duration,
                                             "Difficulty": difficulty,
-                                            "Date": date
+                                            "Date": date,
+                                            "Notes": notes
                                             })
-
-with tab2:
-    st.table(st.session_state.sessions)
 
 with tab3:
     if len(st.session_state.sessions) == 0:
@@ -54,19 +52,14 @@ with tab3:
         for duration in st.session_state.sessions:
             total_duration += duration.get("Duration")
 
-            if duration.get("Duration") > max_duration:
-                max_duration= duration.get("Duration")
-                max_duration_subj= duration.get("Subject")
-
         average_duration= total_duration / len(st.session_state.sessions)
 
+        total_hours= total_duration/60
         col1, col2, col3, col4= st.columns(4)
         with col1:
-            st.metric(label= "Total study hours", value= total_duration)
+            st.metric(label= "Total study hours", value= total_hours)
         with col2:
             st.metric(label= "Number of sessions", value= len(st.session_state.sessions))
-        with col3:
-            st.metric(label= "Most studied subject", value= max_duration_subj)
         with col4:
             st.metric(label= "Average session duration", value= average_duration)
 
@@ -117,4 +110,49 @@ with tab4:
             st.info("Good progress!")
         else:
             st.info("Study champion!")
-        
+
+with tab3:
+    if len(st.session_state.sessions) != 0:
+        for duration, subject in zip(durations,subjects):
+            if duration > max_duration:
+                max_duration= duration
+                max_duration_subj= subject
+
+        with col3:
+            st.metric(label= "Most studied subject", value= max_duration_subj)
+
+with tab2:
+    category= st.selectbox("Choose History table category", ["All Subjects"] + subjects)
+
+    history= []
+
+    if category == "All Subjects":
+        st.table(st.session_state.sessions)
+
+    else:
+        if category == "Python":
+            for i in st.session_state.sessions:
+                if i.get("Subject") == "Python":
+                    history.append(i)
+
+        elif category == "C++":
+            for i in st.session_state.sessions:
+                if i.get("Subject") == "C++":
+                    history.append(i)
+
+        elif category == "Math":
+            for i in st.session_state.sessions:
+                if i.get("Subject") == "Math":
+                    history.append(i)
+
+        elif category == "English":
+            for i in st.session_state.sessions:
+                if i.get("Subject") == "English":
+                    history.append(i)
+        elif category == "Science":
+            for i in st.session_state.sessions:
+                if i.get("Subject") == "Science":
+                    history.append(i)
+            
+
+        st.table(history)
