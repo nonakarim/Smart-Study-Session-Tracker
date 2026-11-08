@@ -3,107 +3,86 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 if "sessions" not in st.session_state:
-    st.session_state.sessions= []
+    st.session_state.sessions = []
 
 st.title("⏱️ Smart Study Session Tracker")
 st.divider()
-tab1, tab2, tab3, tab4= st.tabs(["Add a study session",
-                                 "Session history",
-                                 "Dashboard",
-                                 "Productivity analysis"
-                                 ])
+
+tab1, tab2, tab3, tab4 = st.tabs(["Add a study session", "Session history", "Dashboard", "Productivity analysis"])
+
 with tab1:
-    subjects= ["Python", "C++", "Math", "English", "Science"]
-
+    subjects = ["Python", "C++", "Math", "English", "Science", "Social Studies", "Arabic"]
     with st.form(" "):
-        stu_name= st.text_input("Student Name")
-        subject= st.selectbox("Subject", subjects)
-        duration= st.number_input("Study duration in minutes",
-                                   min_value=1, 
-                                   max_value=300
-                                )
-        difficulty= st.radio("Difficulty", 
-                             ["Easy",
-                              "Medium",
-                              "Hard"
-                              ])
-        date= st.date_input("Session date")
-        notes= st.text_area("Notes")
-
-        save= st.form_submit_button("Save Session", type="primary", width= "stretch")
-
+        stu_name = st.text_input("Student Name")
+        subject = st.selectbox("Subject", subjects)
+        duration = st.number_input("Study duration in minutes", min_value=1, max_value=300)
+        difficulty = st.radio("Difficulty", ["Easy", "Medium", "Hard"])
+        date = st.date_input("Session date")
+        notes = st.text_area("Notes")
+        save = st.form_submit_button("Save Session", type="primary", width="stretch")
+        
         if save:
-            st.session_state.sessions.append({"Student Name": stu_name, 
-                                            "Subject": subject, 
-                                            "Duration": duration,
-                                            "Difficulty": difficulty,
-                                            "Date": date,
-                                            "Notes": notes
-                                            })
+            st.session_state.sessions.append({
+                "Student Name": stu_name,
+                "Subject": subject,
+                "Duration": duration,
+                "Difficulty": difficulty,
+                "Date": date,
+                "Notes": notes
+            })
 
 with tab3:
     if len(st.session_state.sessions) == 0:
         st.info("Add a study session to generate the info.")
     else:
-        total_duration= 0
-        max_duration= 0
-        max_duration_subj= ""
-        duration_sum= 0
-        for duration in st.session_state.sessions:
-            total_duration += duration.get("Duration")
-
-        average_duration= total_duration / len(st.session_state.sessions)
-
-        total_hours= total_duration/60
-        col1, col2, col3, col4= st.columns(4)
+        total_duration = 0
+        max_duration = 0
+        max_duration_subj = ""
+        duration_sum = 0
+        
+        for session in st.session_state.sessions:
+            total_duration += session.get("Duration")
+            
+        average_duration = total_duration / len(st.session_state.sessions)
+        total_hours = total_duration / 60
+        
+        col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric(label= "Total study hours", value= total_hours)
+            st.metric(label="Total study hours", value=f"{total_hours:.2f}")
         with col2:
-            st.metric(label= "Number of sessions", value= len(st.session_state.sessions))
+            st.metric(label="Number of sessions", value=len(st.session_state.sessions))
         with col4:
-            st.metric(label= "Average session duration", value= average_duration)
+            st.metric(label="Average session duration", value=f"{average_duration:.1f}m")
 
 with tab4:
     if len(st.session_state.sessions) == 0:
-            st.info("Add a study session to generate the chart.")
+        st.info("Add a study session to generate the chart.")
     else:
-        #Bar Chart
+        # Bar Chart
         raw_df = pd.DataFrame(st.session_state.sessions)
-        
         subject_chart_df = raw_df.groupby("Subject")["Duration"].sum().reset_index()
+        st.bar_chart(data=subject_chart_df, x="Subject", y="Duration", color="#FF4B4B")
         
-        st.bar_chart(
-            data=subject_chart_df,
-            x="Subject",
-            y="Duration",
-            color="#FF4B4B" 
-        )
-
-        #Pie Chart
-        subjects = ["Python", "C++", "Math", "English", "Science"]
-        durations = [0, 0, 0, 0, 0]
-
+        # Pie Chart
+        subjects = ["Python", "C++", "Math", "English", "Science", "Social Studies", "Arabic"]
+        durations = [0] * len(subjects)
+        
         for i in st.session_state.sessions:
             match i.get("Subject"):
-                case "Python":
-                    durations[0] += i.get("Duration")
-                case "C++":
-                    durations[1] += i.get("Duration")
-                case "Math":
-                    durations[2] += i.get("Duration")
-                case "English":
-                    durations[3] += i.get("Duration")
-                case "Science":
-                    durations[4] += i.get("Duration")                   
+                case "Python": durations[0] += i.get("Duration")
+                case "C++": durations[1] += i.get("Duration")
+                case "Math": durations[2] += i.get("Duration")
+                case "English": durations[3] += i.get("Duration")
+                case "Science": durations[4] += i.get("Duration")
+                case "Social Studies": durations[5] += i.get("Duration")
+                case "Arabic": durations[6] += i.get("Duration")
                 
         fig, ax = plt.subplots()
         ax.pie(durations, labels=subjects, autopct="%1.1f%%", startangle=90)
         ax.axis("equal")
-
         st.pyplot(fig)
-
-        #Message
-
+        
+        # Message
         if total_duration < 120:
             st.info("Keep going!")
         elif total_duration <= 300:
@@ -113,46 +92,21 @@ with tab4:
 
 with tab3:
     if len(st.session_state.sessions) != 0:
-        for duration, subject in zip(durations,subjects):
+        for duration, subject in zip(durations, subjects):
             if duration > max_duration:
-                max_duration= duration
-                max_duration_subj= subject
-
+                max_duration = duration
+                max_duration_subj = subject
         with col3:
-            st.metric(label= "Most studied subject", value= max_duration_subj)
+            st.metric(label="Most studied subject", value=max_duration_subj)
 
 with tab2:
-    category= st.selectbox("Choose History table category", ["All Subjects"] + subjects)
-
-    history= []
-
+    category = st.selectbox("Choose History table category", ["All Subjects"] + subjects)
+    history = []
+    
     if category == "All Subjects":
         st.table(st.session_state.sessions)
-
     else:
-        if category == "Python":
-            for i in st.session_state.sessions:
-                if i.get("Subject") == "Python":
-                    history.append(i)
-
-        elif category == "C++":
-            for i in st.session_state.sessions:
-                if i.get("Subject") == "C++":
-                    history.append(i)
-
-        elif category == "Math":
-            for i in st.session_state.sessions:
-                if i.get("Subject") == "Math":
-                    history.append(i)
-
-        elif category == "English":
-            for i in st.session_state.sessions:
-                if i.get("Subject") == "English":
-                    history.append(i)
-        elif category == "Science":
-            for i in st.session_state.sessions:
-                if i.get("Subject") == "Science":
-                    history.append(i)
-            
-
+        for i in st.session_state.sessions:
+            if i.get("Subject") == category:
+                history.append(i)
         st.table(history)
